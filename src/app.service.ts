@@ -23,10 +23,12 @@ export class AppService implements OnModuleInit {
         await this.validarRecetas(); // 👈 se ejecuta apenas se levanta
     }
 
-    @Cron(CronExpression.EVERY_10_MINUTES)
+    @Cron(CronExpression.EVERY_DAY_AT_11AM)
     async validarRecetas() {
         // Fecha actual
         const hoy = new Date();
+        const fecha = hoy.toLocaleDateString('es-AR');
+        const hora = hoy.toLocaleTimeString('es-AR', { hour12: false });
 
         // Ayer (inicio del día)
         const ayer = new Date(hoy);
@@ -41,6 +43,9 @@ export class AppService implements OnModuleInit {
         // Formato MySQL: YYYY-MM-DD
         const fechaDesde = ayer.toISOString().split('T')[0];
         const fechaHasta = manana.toISOString().split('T')[0];
+        this.logger.debug(
+            `⏰ El cronjob de validación de recetas se ejecutó el día de hoy (${fecha} a las ${hora}).`,
+        );
         try {
             this.logger.debug(
                 `⏰ Ejecutando validación automática de recetas... Rango: ${fechaDesde} -> ${fechaHasta}`,
