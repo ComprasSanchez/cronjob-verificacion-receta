@@ -6,12 +6,14 @@ import obrasocialApi from './constante/obrasocial-api';
 import { IRecetaAuditado } from './auditoria/interface/receta-auditada.interface';
 import { RecetaPlex } from './plex/plex.interface';
 import { RecetaResponse } from './misvalidaciones/misvañidaciones.interface';
+import { AuditoriaService } from './auditoria/auditoria.service';
 
 @Injectable()
 export class AppService implements OnModuleInit {
     private readonly logger = new Logger(AppService.name);
 
     constructor(
+        private readonly auditoriaService: AuditoriaService,
         private readonly misvalidacionesService: MisvalidacionesService,
         private readonly plexService: PlexService,
     ) {}
@@ -52,10 +54,6 @@ export class AppService implements OnModuleInit {
             for (const recetaPlex of recetasPlex ?? []) {
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 const os = obrasocialApi[recetaPlex.CodObSoc];
-                this.logger.debug(
-                    `COD: ${recetaPlex.CodObSoc}, NumeroReceta: ${recetaPlex.NumReceta}, OS: ${os}`,
-                );
-
                 switch (os) {
                     case 'MISVALIDACIONES': {
                         try {
@@ -83,10 +81,11 @@ export class AppService implements OnModuleInit {
                         break;
                 }
             }
-            this.logger.debug({ resultados });
 
             this.logger.debug(`✅ Validación finalizada. Total procesadas: ${resultados.length}`);
-            return resultados;
+            const resultadosGuardados = await this.auditoriaService.bulkRecetaAudita(resultados);
+            this.logger.debug('Proceso finalizado totales', resultadosGuardados);
+            return;
         } catch (err) {
             this.logger.error(
                 '❌ Error general en validarRecetas',

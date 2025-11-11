@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { RecetaResponse } from './misvañidaciones.interface';
 import axios from 'axios';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class MisvalidacionesService {
@@ -9,6 +10,8 @@ export class MisvalidacionesService {
     private readonly claves_sucursales: Record<string, { username: string; password: string }> = {
         '1': { username: 'CB401429', password: '505899' },
     };
+
+    constructor(private readonly configService: ConfigService) {}
 
     async getRecetas(
         sucursal: number,
@@ -19,7 +22,7 @@ export class MisvalidacionesService {
                 'https://www.misvalidaciones.com.ar/receta',
                 {
                     params: {
-                        clave_id: '98c5c54681ww9f32c711',
+                        clave_id: this.configService.get<string>('MIS_VALIDACIONES_ID'),
                         cod_validacion,
                     },
                     auth: this.claves_sucursales[sucursal],
