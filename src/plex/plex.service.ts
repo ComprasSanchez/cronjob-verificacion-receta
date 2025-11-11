@@ -42,7 +42,7 @@ export class PlexService {
       LEFT JOIN obsociales ON reccabecera.IDObSoc = obsociales.CodObSoc 
       LEFT JOIN operadores ON reccabecera.IDUsuario = operadores.IDOperador
       LEFT JOIN cajapartes ON factcabecera.IDCajaParte = cajapartes.IDCajaParte
-      WHERE reccabecera.FechaEmision BETWEEN ? AND ?;
+      WHERE reccabecera.FechaEmision BETWEEN ? AND ? AND reccabecera.CodAutorizacion IS NOT NULL;
     `;
 
         try {
@@ -53,7 +53,6 @@ export class PlexService {
             this.logger.debug(
                 `✅ ${recetas.length} recetas encontradas entre ${fechaDesde} y ${fechaHasta}`,
             );
-            this.logger.debug({ recetas });
             return recetas;
         } catch (error) {
             this.logger.error('❌ Error al obtener recetas Plex:', error);

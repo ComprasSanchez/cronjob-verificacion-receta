@@ -5,8 +5,9 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { MisvalidacionesModule } from './misvalidaciones/misvalidaciones.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { plexDatabase } from './config/database.config';
+import { auditoriaDatabase, plexDatabase } from './config/database.config';
 import { PlexModule } from './plex/plex.module';
+import { AuditoriaModule } from './auditoria/auditoria.module';
 
 @Module({
     imports: [
@@ -20,9 +21,16 @@ import { PlexModule } from './plex/plex.module';
             inject: [ConfigService],
             useFactory: plexDatabase,
         }),
+        TypeOrmModule.forRootAsync({
+            name: 'postgresConnection',
+            imports: [ConfigModule],
+            inject: [ConfigService],
+            useFactory: auditoriaDatabase,
+        }),
         ScheduleModule.forRoot(),
         MisvalidacionesModule,
         PlexModule,
+        AuditoriaModule,
     ],
     controllers: [AppController],
     providers: [AppService],

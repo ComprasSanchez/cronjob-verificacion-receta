@@ -11,13 +11,13 @@ export interface RecetaPlex {
     FechaEmision: Date;
     FechaPrescripcion: Date;
     FechaDispensacion: Date;
-    CodAutorizacion: string | null;
+    CodAutorizacion: string;
     MedMatricula: string;
     MedNombre: string;
     TotReceta: number;
     TotACOS: number;
     Presentada: string;
     Pendiente: string;
-    Comprobante: string;
+    Comprobante: Buffer;
     Operador: string;
 }
