@@ -49,6 +49,9 @@ export class RecetaAuditado {
     @Column({ name: 'id_ob_soc_plex', type: 'int' })
     idObSocPlex: number;
 
+    @Column({ name: 'descripcion_sucursal', type: 'varchar' })
+    descripcionSucursal: string;
+
     /**
      * Fecha de emisión de la receta.
      * Fecha en la que se emitió la receta médica.

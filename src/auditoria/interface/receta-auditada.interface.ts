@@ -14,6 +14,8 @@ export interface IRecetaAuditado {
     /** ID de la obra social en el sistema Plex */
     idObSocPlex: number;
 
+    descripcionSucursal: string;
+
     /** Fecha de emisión de la receta */
     fechaEmision: Date;
 

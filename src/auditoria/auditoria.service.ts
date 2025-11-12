@@ -37,14 +37,8 @@ export class AuditoriaService {
                 // `result.generatedMaps` indica si fue insert
                 if (result.generatedMaps.length > 0) {
                     insertadas++;
-                    this.logger.debug(
-                        `🆕 Receta insertada (IDReceta: ${receta.idReceta}, IDComprobante: ${receta.idComprobante})`,
-                    );
                 } else {
                     actualizadas++;
-                    this.logger.debug(
-                        `🔁 Receta actualizada (IDReceta: ${receta.idReceta}, IDComprobante: ${receta.idComprobante})`,
-                    );
                 }
             } catch (error) {
                 fallidas++;

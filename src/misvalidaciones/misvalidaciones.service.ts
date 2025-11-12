@@ -29,12 +29,6 @@ export class MisvalidacionesService {
                 },
             );
 
-            this.logger.log({
-                sucursal,
-                cod_validacion,
-                status: receta.status,
-            });
-
             return receta.data;
         } catch (error) {
             this.logger.error(
