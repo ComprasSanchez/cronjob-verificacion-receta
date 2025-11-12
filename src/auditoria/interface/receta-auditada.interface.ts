@@ -9,7 +9,7 @@ export interface IRecetaAuditado {
     idReceta: number;
 
     /** ID de la caja asociada a la receta */
-    idCaja: number;
+    idCaja: number | null;
 
     /** ID de la obra social en el sistema Plex */
     idObSocPlex: number;

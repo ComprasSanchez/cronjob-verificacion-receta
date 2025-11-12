@@ -39,8 +39,8 @@ export class RecetaAuditado {
      * ID de la caja asociada a la receta.
      * Nota: Futura Foreign Key a Caja. Actualmente se guarda con IDGLOBAL.
      */
-    @Column({ name: 'id_caja', type: 'int' })
-    idCaja: number;
+    @Column({ name: 'id_caja', type: 'int', nullable: true })
+    idCaja: number | null;
 
     /**
      * ID de la obra social en el sistema Plex.
