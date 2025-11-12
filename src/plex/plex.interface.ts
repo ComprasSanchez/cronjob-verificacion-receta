@@ -20,4 +20,6 @@ export interface RecetaPlex {
     Pendiente: string;
     Comprobante: Buffer;
     Operador: string;
+    Tipo: string;
+    IDComprobanteRef: number | null;
 }

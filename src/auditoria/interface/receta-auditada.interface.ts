@@ -34,4 +34,6 @@ export interface IRecetaAuditado {
 
     /** Indica si la receta ha sido auditada */
     auditado: boolean;
+
+    irregular: boolean;
 }

@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
 
 /**
  * Entidad que representa una receta auditada en el sistema.
@@ -6,6 +6,7 @@ import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
  * mediante el proceso de verificación con el sistema Plex y MisValidaciones.
  */
 @Entity('receta-auditado')
+@Unique(['idReceta'])
 export class RecetaAuditado {
     /**
      * Identificador único autogenerado de la receta auditada.
@@ -97,4 +98,7 @@ export class RecetaAuditado {
      */
     @Column({ name: 'auditado', type: 'boolean' })
     auditado: boolean;
+
+    @Column({ name: 'irregular', type: 'boolean' })
+    irregular: boolean;
 }

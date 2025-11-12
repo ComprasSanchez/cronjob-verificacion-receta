@@ -105,6 +105,7 @@ export class AppService implements OnModuleInit {
         recetaMisValidaciones: RecetaResponse | undefined,
     ): IRecetaAuditado {
         let auditado = false;
+        let irregular = false;
         if (recetaMisValidaciones) {
             const { precio_total, importe_cobertura } = recetaMisValidaciones.items[0];
             if (
@@ -112,6 +113,10 @@ export class AppService implements OnModuleInit {
                 recetaPlex.TotACOS.toString() === importe_cobertura
             ) {
                 auditado = true;
+            }
+
+            if (recetaPlex.Tipo === 'NC' && recetaPlex.IDComprobanteRef) {
+                irregular = true;
             }
         }
 
@@ -128,6 +133,7 @@ export class AppService implements OnModuleInit {
             totalACOS: recetaPlex.TotACOS,
             operador: recetaPlex.Operador,
             auditado,
+            irregular,
         };
     }
 }

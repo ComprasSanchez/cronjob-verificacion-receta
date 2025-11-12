@@ -36,7 +36,9 @@ export class PlexService {
         reccabecera.Presentada,
         reccabecera.Pendiente,
         CONCAT(reccabecera.Tipo, '-', reccabecera.Letra, '-', reccabecera.PuntoVta, '-', reccabecera.Numero) AS Comprobante,
-        operadores.Operador
+        operadores.Operador,
+        factcabecera.Tipo
+        factcabecera.IDComprobanteRef
       FROM reccabecera
       LEFT JOIN factcabecera ON reccabecera.IDComprobante = factcabecera.IDComprobante
       LEFT JOIN obsociales ON reccabecera.IDObSoc = obsociales.CodObSoc 
