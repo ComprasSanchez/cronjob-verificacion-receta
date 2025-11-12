@@ -37,14 +37,14 @@ export class PlexService {
         reccabecera.Pendiente,
         CONCAT(reccabecera.Tipo, '-', reccabecera.Letra, '-', reccabecera.PuntoVta, '-', reccabecera.Numero) AS Comprobante,
         operadores.Operador,
-        factcabecera.Tipo
+        factcabecera.Tipo,
         factcabecera.IDComprobanteRef
       FROM reccabecera
       LEFT JOIN factcabecera ON reccabecera.IDComprobante = factcabecera.IDComprobante
       LEFT JOIN obsociales ON reccabecera.IDObSoc = obsociales.CodObSoc 
       LEFT JOIN operadores ON reccabecera.IDUsuario = operadores.IDOperador
       LEFT JOIN cajapartes ON factcabecera.IDCajaParte = cajapartes.IDCajaParte
-      WHERE reccabecera.FechaEmision BETWEEN ? AND ? AND reccabecera.CodAutorizacion IS NOT NULL;
+      WHERE reccabecera.FechaEmision BETWEEN ? AND ?;
     `;
 
         try {

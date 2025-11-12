@@ -23,7 +23,7 @@ export class AppService implements OnModuleInit {
         await this.validarRecetas(); // 👈 se ejecuta apenas se levanta
     }
 
-    @Cron(CronExpression.EVERY_DAY_AT_11AM)
+    @Cron(CronExpression.EVERY_6_HOURS)
     async validarRecetas() {
         // Fecha actual
         const hoy = new Date();
@@ -64,10 +64,13 @@ export class AppService implements OnModuleInit {
                         try {
                             const recetaMis = await this.misvalidacionesService.getRecetas(
                                 recetaPlex.Sucursal,
-                                recetaPlex.CodAutorizacion,
+                                recetaPlex.CodAutorizacion || '0',
                             );
 
-                            const match = this.matchPlexWithMisValidaciones(recetaPlex, recetaMis);
+                            const match = await this.matchPlexWithMisValidaciones(
+                                recetaPlex,
+                                recetaMis,
+                            );
                             resultados.push(match);
                         } catch (e) {
                             this.logger.error(
@@ -78,11 +81,31 @@ export class AppService implements OnModuleInit {
                         break;
                     }
 
+                    case 'SINAPP': {
+                        try {
+                            const match = await this.matchPlexWithoutApp(recetaPlex);
+                            resultados.push(match);
+                        } catch (e) {
+                            this.logger.error(
+                                `❌ Error validando SINAPP (Suc:${recetaPlex?.Sucursal}, CodAut:${recetaPlex?.CodAutorizacion}, IdReceta:${recetaPlex.IDReceta})`,
+                                e instanceof Error ? e.stack : String(e),
+                            );
+                        }
+                        break;
+                    }
                     default:
-                        // Si en el futuro agregás otra OS, entrará acá.
                         this.logger.debug(
                             `ℹ️ OS no manejada en switch: ${recetaPlex?.CodObSoc} (IDReceta: ${recetaPlex?.IDReceta})`,
                         );
+                        try {
+                            const match = await this.matchPlexWithoutApp(recetaPlex);
+                            resultados.push(match);
+                        } catch (e) {
+                            this.logger.error(
+                                `❌ Error validando que no hicieron match (Suc:${recetaPlex?.Sucursal}, CodAut:${recetaPlex?.CodAutorizacion}, IdReceta:${recetaPlex.IDReceta})`,
+                                e instanceof Error ? e.stack : String(e),
+                            );
+                        }
                         break;
                 }
             }
@@ -100,11 +123,11 @@ export class AppService implements OnModuleInit {
         }
     }
 
-    matchPlexWithMisValidaciones(
+    async matchPlexWithMisValidaciones(
         recetaPlex: RecetaPlex,
         recetaMisValidaciones: RecetaResponse | undefined,
-    ): IRecetaAuditado {
-        let auditado = false;
+    ): Promise<IRecetaAuditado> {
+        let auditada = false;
         let irregular = false;
         if (recetaMisValidaciones) {
             const { precio_total, importe_cobertura } = recetaMisValidaciones.items[0];
@@ -112,10 +135,10 @@ export class AppService implements OnModuleInit {
                 recetaPlex.TotReceta.toString() === precio_total &&
                 recetaPlex.TotACOS.toString() === importe_cobertura
             ) {
-                auditado = true;
+                auditada = true;
             }
 
-            if (recetaPlex.Tipo === 'NC' && recetaPlex.IDComprobanteRef) {
+            if (recetaPlex.Tipo === 'FV' && recetaPlex.IDComprobanteRef) {
                 irregular = true;
             }
         }
@@ -124,7 +147,7 @@ export class AppService implements OnModuleInit {
             idComprobante: recetaPlex.IDComprobante,
             comprobante: recetaPlex.Comprobante.toString(),
             idReceta: recetaPlex.IDReceta,
-            idCaja: recetaPlex.idGlobal,
+            idCaja: await this.auditoriaService.getCajaSegunGlobal(recetaPlex.idGlobal),
             idObSocPlex: recetaPlex.CodObSoc,
             fechaEmision: recetaPlex.FechaEmision,
             fechaPrescipcion: recetaPlex.FechaPrescripcion,
@@ -132,8 +155,26 @@ export class AppService implements OnModuleInit {
             totalReceta: recetaPlex.TotReceta,
             totalACOS: recetaPlex.TotACOS,
             operador: recetaPlex.Operador,
-            auditado,
+            auditada,
             irregular,
+        };
+    }
+
+    async matchPlexWithoutApp(recetaPlex: RecetaPlex): Promise<IRecetaAuditado> {
+        return {
+            idComprobante: recetaPlex.IDComprobante,
+            comprobante: recetaPlex.Comprobante.toString(),
+            idReceta: recetaPlex.IDReceta,
+            idCaja: await this.auditoriaService.getCajaSegunGlobal(recetaPlex.idGlobal),
+            idObSocPlex: recetaPlex.CodObSoc,
+            fechaEmision: recetaPlex.FechaEmision,
+            fechaPrescipcion: recetaPlex.FechaPrescripcion,
+            codAutorizacion: recetaPlex.CodAutorizacion,
+            totalReceta: recetaPlex.TotReceta,
+            totalACOS: recetaPlex.TotACOS,
+            operador: recetaPlex.Operador,
+            auditada: false,
+            irregular: false,
         };
     }
 }

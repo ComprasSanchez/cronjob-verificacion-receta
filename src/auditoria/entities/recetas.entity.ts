@@ -67,8 +67,8 @@ export class RecetaAuditado {
      * Código de autorización de la receta.
      * Código que autoriza el procesamiento de la receta por parte de la obra social.
      */
-    @Column({ name: 'codigo_autorizacion', type: 'varchar' })
-    codAutorizacion: string;
+    @Column({ name: 'codigo_autorizacion', type: 'varchar', nullable: true })
+    codAutorizacion: string | null;
 
     /**
      * Total de la receta.
@@ -97,7 +97,7 @@ export class RecetaAuditado {
      * Flag booleano que determina si el proceso de auditoría fue completado.
      */
     @Column({ name: 'auditado', type: 'boolean' })
-    auditado: boolean;
+    auditada: boolean;
 
     @Column({ name: 'irregular', type: 'boolean' })
     irregular: boolean;

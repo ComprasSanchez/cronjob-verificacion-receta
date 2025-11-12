@@ -11,7 +11,7 @@ export interface RecetaPlex {
     FechaEmision: Date;
     FechaPrescripcion: Date;
     FechaDispensacion: Date;
-    CodAutorizacion: string;
+    CodAutorizacion: string | null;
     MedMatricula: string;
     MedNombre: string;
     TotReceta: number;

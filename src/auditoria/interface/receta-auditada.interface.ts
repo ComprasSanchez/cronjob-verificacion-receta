@@ -21,7 +21,7 @@ export interface IRecetaAuditado {
     fechaPrescipcion: Date;
 
     /** Código de autorización de la receta */
-    codAutorizacion: string;
+    codAutorizacion: string | null;
 
     /** Total de la receta */
     totalReceta: number;
@@ -33,7 +33,7 @@ export interface IRecetaAuditado {
     operador: string;
 
     /** Indica si la receta ha sido auditada */
-    auditado: boolean;
+    auditada: boolean;
 
     irregular: boolean;
 }

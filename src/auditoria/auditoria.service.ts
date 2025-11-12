@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { RecetaAuditado } from './entities/recetas.entity';
 import { Repository } from 'typeorm';
 import { IRecetaAuditado } from './interface/receta-auditada.interface';
+import { CajaAuditada } from './entities/caja-auditada.entity';
 
 @Injectable()
 export class AuditoriaService {
@@ -11,47 +12,63 @@ export class AuditoriaService {
     constructor(
         @InjectRepository(RecetaAuditado, 'postgresConnection')
         private readonly recetaAuditaRepository: Repository<RecetaAuditado>,
+
+        @InjectRepository(CajaAuditada, 'postgresConnection')
+        private readonly cajaAuditaba: Repository<CajaAuditada>,
     ) {}
 
     async bulkRecetaAudita(recetas: IRecetaAuditado[]) {
         if (!recetas?.length) {
             this.logger.warn('⚠️ No se recibieron recetas para auditar.');
-            return { total: 0, exitosas: 0, fallidas: 0 };
+            return { total: 0, insertadas: 0, actualizadas: 0, fallidas: 0 };
         }
 
-        this.logger.log(`📦 Iniciando guardado masivo de ${recetas.length} recetas auditadas...`);
+        this.logger.log(`📦 Iniciando UPSERT individual de ${recetas.length} recetas auditadas...`);
 
-        const resultados = await Promise.allSettled(
-            recetas.map(async (receta) => {
-                try {
-                    const entidad = this.recetaAuditaRepository.create(receta);
-                    const guardada = await this.recetaAuditaRepository.save(entidad);
+        let insertadas = 0;
+        let actualizadas = 0;
+        let fallidas = 0;
+
+        for (const receta of recetas) {
+            try {
+                // Ejecutar upsert individual (por idReceta)
+                const result = await this.recetaAuditaRepository.upsert(receta, ['idReceta']);
+
+                // `result.generatedMaps` indica si fue insert
+                if (result.generatedMaps.length > 0) {
+                    insertadas++;
                     this.logger.debug(
-                        `✅ Receta auditada guardada (IDComprobante: ${receta.idComprobante}, IDReceta: ${receta.idReceta})`,
+                        `🆕 Receta insertada (IDReceta: ${receta.idReceta}, IDComprobante: ${receta.idComprobante})`,
                     );
-                    return guardada;
-                } catch (error) {
-                    this.logger.error(
-                        `❌ Error guardando receta (IDComprobante: ${receta.idComprobante}, IDReceta: ${receta.idReceta})`,
-                        error instanceof Error ? error.message : String(error),
+                } else {
+                    actualizadas++;
+                    this.logger.debug(
+                        `🔁 Receta actualizada (IDReceta: ${receta.idReceta}, IDComprobante: ${receta.idComprobante})`,
                     );
-                    throw error;
                 }
-            }),
-        );
+            } catch (error) {
+                fallidas++;
+                this.logger.error(
+                    `❌ Error en UPSERT de receta (IDReceta: ${receta.idReceta}, IDComprobante: ${receta.idComprobante})`,
+                    error instanceof Error ? error.message : String(error),
+                );
+            }
+        }
 
-        // Contar resultados
-        const exitosas = resultados.filter((r) => r.status === 'fulfilled').length;
-        const fallidas = resultados.filter((r) => r.status === 'rejected').length;
-
+        const total = recetas.length;
         this.logger.log(
-            `📊 Resultado guardado masivo → Total: ${recetas.length} | Exitosas: ${exitosas} | Fallidas: ${fallidas}`,
+            `📊 UPSERT finalizado → Total: ${total} | 🆕 Insertadas: ${insertadas} | 🔁 Actualizadas: ${actualizadas} | ❌ Fallidas: ${fallidas}`,
         );
 
-        return {
-            total: recetas.length,
-            exitosas,
-            fallidas,
-        };
+        return { total, insertadas, actualizadas, fallidas };
+    }
+
+    async getCajaSegunGlobal(idGlobal: number): Promise<number> {
+        const caja = await this.cajaAuditaba.findOne({ where: { idGlobal } });
+        if (caja) {
+            this.logger.debug(`Caja encontrada ${caja.id}`);
+            return caja.id;
+        }
+        return idGlobal;
     }
 }

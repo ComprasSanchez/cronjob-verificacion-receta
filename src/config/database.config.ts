@@ -1,5 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { CajaAuditada } from 'src/auditoria/entities/caja-auditada.entity';
 import { RecetaAuditado } from 'src/auditoria/entities/recetas.entity';
 
 export const plexDatabase = (configService: ConfigService): TypeOrmModuleOptions => ({
@@ -23,7 +24,7 @@ export const auditoriaDatabase = (configService: ConfigService): TypeOrmModuleOp
     username: configService.get<string>('PG_USERNAME'),
     password: configService.get<string>('PG_PASSWORD'),
     database: configService.get<string>('PG_DATABASE'),
-    entities: [RecetaAuditado],
+    entities: [RecetaAuditado, CajaAuditada],
     synchronize: process.env.NODE_ENV !== 'production',
     // synchronize: true,
     logging: false,
