@@ -14,6 +14,9 @@ export const plexDatabase = (configService: ConfigService): TypeOrmModuleOptions
     entities: [],
     synchronize: true,
     logging: false,
+    extra: {
+        connectionLimit: configService.get<number>('DB_CONNECTION_LIMIT', 10),
+    },
 });
 
 export const auditoriaDatabase = (configService: ConfigService): TypeOrmModuleOptions => ({
