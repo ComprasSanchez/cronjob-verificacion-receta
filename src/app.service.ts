@@ -32,7 +32,7 @@ export class AppService implements OnModuleInit {
 
         // Ayer (inicio del día)
         const ayer = new Date(hoy);
-        ayer.setDate(hoy.getDate() - 3);
+        ayer.setDate(hoy.getDate() - 7);
         ayer.setHours(0, 0, 0, 0);
 
         // Mañana (fin del día)
@@ -127,10 +127,11 @@ export class AppService implements OnModuleInit {
         let auditada = false;
         let irregular = false;
         if (recetaMisValidaciones) {
+            this.logger.debug('Adentro');
             const { precio_total, importe_cobertura } = recetaMisValidaciones.items[0];
             if (
-                recetaPlex.TotReceta.toString() === precio_total &&
-                recetaPlex.TotACOS.toString() === importe_cobertura
+                Number(recetaPlex.TotReceta) === Number(precio_total) &&
+                Number(recetaPlex.TotACOS) === Number(importe_cobertura)
             ) {
                 auditada = true;
             }
