@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { RecetaResponse } from './misvañidaciones.interface';
 import axios from 'axios';
 import { ConfigService } from '@nestjs/config';
+type Credencial = { username: string; password: string };
 
 @Injectable()
 export class MisvalidacionesService {
@@ -12,6 +13,17 @@ export class MisvalidacionesService {
     };
 
     constructor(private readonly configService: ConfigService) {}
+
+    private getCredentials(id: number): Credencial | undefined {
+        const username = this.configService.get<string>(`USERNAME_${id}`);
+        const password = this.configService.get<string>(`PASSWORD_${id}`);
+
+        if (!username || !password) {
+            return undefined;
+        }
+
+        return { username, password };
+    }
 
     async getRecetas(
         sucursal: number,
@@ -25,7 +37,7 @@ export class MisvalidacionesService {
                         clave_id: this.configService.get<string>('MIS_VALIDACIONES_ID'),
                         cod_validacion,
                     },
-                    auth: this.claves_sucursales[sucursal],
+                    auth: this.getCredentials(sucursal),
                 },
             );
 
