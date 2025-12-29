@@ -56,15 +56,18 @@ export class RecetaAuditado {
      * Fecha de emisión de la receta.
      * Fecha en la que se emitió la receta médica.
      */
-    @Column({ name: 'fecha_emision', type: 'date' })
+    @Column({ name: 'fecha_emision', type: 'date', nullable: true })
     fechaEmision: Date;
 
     /**
      * Fecha de prescripción de la receta.
      * Fecha en la que el médico prescribió la receta.
      */
-    @Column({ name: 'fecha_prescripcion', type: 'date' })
+    @Column({ name: 'fecha_prescripcion', type: 'date', nullable: true })
     fechaPrescipcion: Date;
+
+    @Column({ name: 'fecha_dispensacion', type: 'date'})
+    fechaDispensacion: Date;
 
     /**
      * Código de autorización de la receta.

@@ -44,7 +44,7 @@ export class PlexService {
       LEFT JOIN obsociales ON reccabecera.IDObSoc = obsociales.CodObSoc 
       LEFT JOIN operadores ON reccabecera.IDUsuario = operadores.IDOperador
       LEFT JOIN cajapartes ON factcabecera.IDCajaParte = cajapartes.IDCajaParte
-      WHERE reccabecera.FechaEmision BETWEEN ? AND ?;
+      WHERE reccabecera.FechaDispensacion BETWEEN BETWEEN ? AND ?;
     `;
 
         try {

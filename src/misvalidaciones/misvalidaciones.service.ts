@@ -30,6 +30,7 @@ export class MisvalidacionesService {
         cod_validacion: string,
     ): Promise<RecetaResponse | undefined> {
         try {
+            const auth = this.getCredentials(sucursal)
             const receta = await axios.get<RecetaResponse>(
                 'https://www.misvalidaciones.com.ar/receta',
                 {
@@ -37,13 +38,13 @@ export class MisvalidacionesService {
                         clave_id: this.configService.get<string>('MIS_VALIDACIONES_ID'),
                         cod_validacion,
                     },
-                    auth: this.getCredentials(sucursal),
+                    auth: auth,
                 },
             );
 
             return receta.data;
         } catch (error) {
-            this.logger.error(
+            this.logger.warn(
                 `❌ Error al obtener receta de MisValidaciones (Sucursal: ${sucursal}, Cod: ${cod_validacion})`,
                 error instanceof Error ? error.message : String(error),
             );

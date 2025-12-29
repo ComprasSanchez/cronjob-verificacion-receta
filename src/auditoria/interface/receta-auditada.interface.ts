@@ -22,6 +22,8 @@ export interface IRecetaAuditado {
     /** Fecha de prescripción de la receta */
     fechaPrescipcion: Date;
 
+    fechaDispensacion: Date;
+
     /** Código de autorización de la receta */
     codAutorizacion: string | null;
 
