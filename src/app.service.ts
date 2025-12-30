@@ -32,7 +32,7 @@ export class AppService implements OnModuleInit {
 
         // Ayer (inicio del día)
         const ayer = new Date(hoy);
-        ayer.setDate(hoy.getDate() - 1);
+        ayer.setDate(hoy.getDate() - 3);
         ayer.setHours(0, 0, 0, 0);
 
         // Mañana (fin del día)
