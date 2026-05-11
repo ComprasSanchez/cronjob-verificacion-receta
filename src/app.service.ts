@@ -16,10 +16,10 @@ export class AppService implements OnModuleInit {
         private readonly auditoriaService: AuditoriaService,
         private readonly misvalidacionesService: MisvalidacionesService,
         private readonly plexService: PlexService,
-    ) {}
+    ) { }
 
     async onModuleInit() {
-        this.logger.debug('🚀 Ejecutando validación inicial al iniciar la app...');
+        this.logger.debug('🚀 Ejecutando validación inicial al iniciar la app..., si no esta comentada xd');
         await this.validarRecetas(); // 👈 se ejecuta apenas se levanta
     }
 
@@ -145,6 +145,9 @@ export class AppService implements OnModuleInit {
             comprobante: recetaPlex.Comprobante.toString(),
             idReceta: recetaPlex.IDReceta,
             idCaja: recetaPlex.idGlobal, // await this.auditoriaService.getCajaSegunGlobal(recetaPlex.idGlobal),
+            fechaAperturaCaja: recetaPlex.FechaApertura,
+            fechaCierreCaja: recetaPlex.FechaCierre,
+            sucursal: recetaPlex.Sucursal,
             idObSocPlex: recetaPlex.CodObSoc,
             descripcionSucursal: recetaPlex.Descripcio,
             fechaEmision: recetaPlex.FechaEmision,
@@ -156,6 +159,7 @@ export class AppService implements OnModuleInit {
             operador: recetaPlex.Operador,
             auditada,
             irregular,
+            estado: null,
         };
     }
 
@@ -165,6 +169,9 @@ export class AppService implements OnModuleInit {
             comprobante: recetaPlex.Comprobante.toString(),
             idReceta: recetaPlex.IDReceta,
             idCaja: recetaPlex.idGlobal, // await this.auditoriaService.getCajaSegunGlobal(recetaPlex.idGlobal),
+            fechaAperturaCaja: recetaPlex.FechaApertura,
+            fechaCierreCaja: recetaPlex.FechaCierre,
+            sucursal: recetaPlex.Sucursal,
             idObSocPlex: recetaPlex.CodObSoc,
             descripcionSucursal: recetaPlex.Descripcio,
             fechaEmision: recetaPlex.FechaEmision,
@@ -176,6 +183,7 @@ export class AppService implements OnModuleInit {
             operador: recetaPlex.Operador,
             auditada: false,
             irregular: false,
+            estado: null,
         };
     }
 }

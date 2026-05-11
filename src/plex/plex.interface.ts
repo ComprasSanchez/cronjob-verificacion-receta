@@ -2,6 +2,8 @@ export interface RecetaPlex {
     IDComprobante: number;
     IDReceta: number;
     idGlobal: number;
+    FechaApertura: Date | null;
+    FechaCierre: Date | null;
     Sucursal: number;
     NumReceta: string;
     CodObSoc: number;
