@@ -11,6 +11,12 @@ export interface IRecetaAuditado {
     /** ID de la caja asociada a la receta */
     idCaja: number | null;
 
+    fechaAperturaCaja: Date | null;
+
+    fechaCierreCaja: Date | null;
+
+    sucursal: number | null;
+
     /** ID de la obra social en el sistema Plex */
     idObSocPlex: number;
 
@@ -40,4 +46,6 @@ export interface IRecetaAuditado {
     auditada: boolean;
 
     irregular: boolean;
+
+    estado: boolean | null;
 }

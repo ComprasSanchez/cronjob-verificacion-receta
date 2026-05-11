@@ -10,7 +10,7 @@ export class PlexService {
     constructor(
         @InjectDataSource('mysql-plex')
         private dataSource: DataSource,
-    ) {}
+    ) { }
 
     async getRecetasPlex(fechaDesde: string, fechaHasta: string): Promise<RecetaPlex[]> {
         const sql = `
@@ -18,6 +18,8 @@ export class PlexService {
         factcabecera.IDComprobante,
         reccabecera.IDReceta,
         cajapartes.idGlobal,
+        cajapartes.FechaApertura,
+        cajapartes.FechaCierre,
         reccabecera.Sucursal,
         reccabecera.NumReceta,
         obsociales.CodObSoc,

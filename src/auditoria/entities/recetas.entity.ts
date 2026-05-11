@@ -42,6 +42,15 @@ export class RecetaAuditado {
     @Column({ name: 'id_caja', type: 'int', nullable: true })
     idCaja: number | null;
 
+    @Column({ name: 'fecha_apertura_caja', type: 'timestamp', nullable: true })
+    fechaAperturaCaja: Date | null;
+
+    @Column({ name: 'fecha_cierre_caja', type: 'timestamp', nullable: true })
+    fechaCierreCaja: Date | null;
+
+    @Column({ name: 'sucursal', type: 'int', nullable: true })
+    sucursal: number | null;
+
     /**
      * ID de la obra social en el sistema Plex.
      * Identifica la obra social a la que pertenece el afiliado de la receta.
@@ -107,4 +116,7 @@ export class RecetaAuditado {
 
     @Column({ name: 'irregular', type: 'boolean' })
     irregular: boolean;
+
+    @Column({ name: 'estado', type: 'boolean', nullable: true, default: null })
+    estado: boolean | null;
 }
