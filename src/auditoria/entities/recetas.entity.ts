@@ -35,6 +35,9 @@ export class RecetaAuditado {
     @Column({ name: 'id_receta', type: 'int' })
     idReceta: number;
 
+    @Column({ name: 'id_receta_global', type: 'varchar', nullable: true })
+    idRecetaGlobal: string | null;
+
     /**
      * ID de la caja asociada a la receta.
      * Nota: Futura Foreign Key a Caja. Actualmente se guarda con IDGLOBAL.
