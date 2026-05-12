@@ -20,7 +20,7 @@ export class AppService implements OnModuleInit {
 
     async onModuleInit() {
         this.logger.debug('🚀 Ejecutando validación inicial al iniciar la app..., si no esta comentada xd');
-        // await this.validarRecetas(); // 👈 se ejecuta apenas se levanta
+        await this.validarRecetas(); // 👈 se ejecuta apenas se levanta
     }
 
     @Cron(CronExpression.EVERY_6_HOURS)

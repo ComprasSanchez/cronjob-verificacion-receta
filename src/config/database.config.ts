@@ -28,7 +28,7 @@ export const auditoriaDatabase = (configService: ConfigService): TypeOrmModuleOp
     password: configService.get<string>('PG_PASSWORD'),
     database: configService.get<string>('PG_DATABASE'),
     entities: [RecetaAuditado],
-    synchronize: true,
+    synchronize: false,
     logging: false,
     ssl:
         configService.get<string>('PG_SSL') === 'true'
