@@ -20,7 +20,7 @@ export class AppService implements OnModuleInit {
 
     async onModuleInit() {
         this.logger.debug('🚀 Ejecutando validación inicial al iniciar la app..., si no esta comentada xd');
-        await this.validarRecetas(); // 👈 se ejecuta apenas se levanta
+        // await this.validarRecetas(); // 👈 se ejecuta apenas se levanta
     }
 
     @Cron(CronExpression.EVERY_6_HOURS)
@@ -144,6 +144,7 @@ export class AppService implements OnModuleInit {
             idComprobante: recetaPlex.IDComprobante,
             comprobante: recetaPlex.Comprobante.toString(),
             idReceta: recetaPlex.IDReceta,
+            idRecetaGlobal: recetaPlex.IdRecetaGlobal ?? null,
             idCaja: recetaPlex.idGlobal, // await this.auditoriaService.getCajaSegunGlobal(recetaPlex.idGlobal),
             fechaAperturaCaja: recetaPlex.FechaApertura,
             fechaCierreCaja: recetaPlex.FechaCierre,
@@ -168,6 +169,7 @@ export class AppService implements OnModuleInit {
             idComprobante: recetaPlex.IDComprobante,
             comprobante: recetaPlex.Comprobante.toString(),
             idReceta: recetaPlex.IDReceta,
+            idRecetaGlobal: recetaPlex.IdRecetaGlobal ?? null,
             idCaja: recetaPlex.idGlobal, // await this.auditoriaService.getCajaSegunGlobal(recetaPlex.idGlobal),
             fechaAperturaCaja: recetaPlex.FechaApertura,
             fechaCierreCaja: recetaPlex.FechaCierre,

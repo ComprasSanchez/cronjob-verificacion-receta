@@ -17,6 +17,7 @@ export class PlexService {
       SELECT 
         factcabecera.IDComprobante,
         reccabecera.IDReceta,
+        reccabecera.IdRecetaGlobal,
         cajapartes.idGlobal,
         cajapartes.FechaApertura,
         cajapartes.FechaCierre,

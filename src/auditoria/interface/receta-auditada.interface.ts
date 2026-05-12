@@ -8,6 +8,8 @@ export interface IRecetaAuditado {
     /** ID de la receta en el sistema Plex */
     idReceta: number;
 
+    idRecetaGlobal: string | null;
+
     /** ID de la caja asociada a la receta */
     idCaja: number | null;
 
