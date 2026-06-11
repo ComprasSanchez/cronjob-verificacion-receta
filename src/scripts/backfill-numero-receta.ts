@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from '../app.module';
+import { BackfillModule } from './backfill.module';
 import { PlexService } from '../plex/plex.service';
 import { AuditoriaService } from '../auditoria/auditoria.service';
 
@@ -15,7 +15,8 @@ async function bootstrap() {
     const logger = new Logger('BackfillNumeroReceta');
 
     // Solo contexto de DI, sin levantar el servidor HTTP ni el cron.
-    const app = await NestFactory.createApplicationContext(AppModule, {
+    // Usa BackfillModule (no AppService) para no disparar validarRecetas().
+    const app = await NestFactory.createApplicationContext(BackfillModule, {
         logger: ['error', 'warn', 'log', 'debug'],
     });
 
