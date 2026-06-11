@@ -64,4 +64,34 @@ export class PlexService {
             throw error;
         }
     }
+
+    /**
+     * Devuelve el NumReceta de Plex para una lista de IDReceta.
+     * Consulta en lotes para no exceder el límite de parámetros del driver.
+     */
+    async getNumRecetasByIds(
+        idRecetas: number[],
+        chunkSize = 10000,
+    ): Promise<{ IDReceta: number; NumReceta: string | null }[]> {
+        const resultados: { IDReceta: number; NumReceta: string | null }[] = [];
+
+        for (let i = 0; i < idRecetas.length; i += chunkSize) {
+            const chunk = idRecetas.slice(i, i + chunkSize);
+            const placeholders = chunk.map(() => '?').join(', ');
+            const sql = `
+        SELECT IDReceta, NumReceta
+        FROM reccabecera
+        WHERE IDReceta IN (${placeholders});
+      `;
+            const filas = await this.dataSource.query<
+                { IDReceta: number; NumReceta: string | null }[]
+            >(sql, chunk);
+            resultados.push(...filas);
+        }
+
+        this.logger.debug(
+            `✅ NumReceta encontrado para ${resultados.length}/${idRecetas.length} IDReceta`,
+        );
+        return resultados;
+    }
 }

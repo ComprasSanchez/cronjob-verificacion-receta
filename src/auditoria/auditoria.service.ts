@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RecetaAuditado } from './entities/recetas.entity';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { IRecetaAuditado } from './interface/receta-auditada.interface';
 import { CajaAuditada } from './entities/caja-auditada.entity';
 
@@ -55,6 +55,64 @@ export class AuditoriaService {
         );
 
         return { total, insertadas, actualizadas, fallidas };
+    }
+
+    /**
+     * Devuelve los idReceta de las filas que todavía no tienen numero_receta cargado.
+     */
+    async getIdRecetasSinNumero(): Promise<number[]> {
+        const filas = await this.recetaAuditaRepository.find({
+            select: { idReceta: true },
+            where: { numeroReceta: IsNull() },
+        });
+        return filas.map((f) => f.idReceta);
+    }
+
+    /**
+     * Actualiza numero_receta en lotes a partir de un mapa idReceta -> NumReceta.
+     * Solo pisa filas donde numero_receta sigue en NULL.
+     */
+    async backfillNumeroReceta(
+        valores: { idReceta: number; numeroReceta: string | null }[],
+        chunkSize = 10000,
+    ): Promise<{ total: number; actualizadas: number }> {
+        let actualizadas = 0;
+
+        for (let i = 0; i < valores.length; i += chunkSize) {
+            const chunk = valores.slice(i, i + chunkSize);
+
+            // Construye: UPDATE ... FROM (VALUES ($1,$2),($3,$4)...) AS v(id_receta, numero_receta)
+            const params: (number | string | null)[] = [];
+            const tuples = chunk
+                .map((v, idx) => {
+                    params.push(v.idReceta, v.numeroReceta);
+                    return `($${idx * 2 + 1}, $${idx * 2 + 2})`;
+                })
+                .join(', ');
+
+            const sql = `
+        UPDATE "receta-auditado" AS r
+        SET numero_receta = v.numero_receta
+        FROM (VALUES ${tuples}) AS v(id_receta, numero_receta)
+        WHERE r.id_receta = v.id_receta::int
+          AND r.numero_receta IS NULL
+        RETURNING r.id_receta;
+      `;
+
+            const result = await this.recetaAuditaRepository.query<{ id_receta: number }[]>(
+                sql,
+                params,
+            );
+            actualizadas += Array.isArray(result) ? result.length : 0;
+            this.logger.debug(
+                `🔁 Backfill lote ${i / chunkSize + 1}: ${chunk.length} filas procesadas`,
+            );
+        }
+
+        this.logger.log(
+            `📊 Backfill numero_receta → Total candidatas: ${valores.length} | Actualizadas: ${actualizadas}`,
+        );
+        return { total: valores.length, actualizadas };
     }
 
     async getCajaSegunGlobal(idGlobal: number): Promise<number> {

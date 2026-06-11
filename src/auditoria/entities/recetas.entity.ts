@@ -39,6 +39,12 @@ export class RecetaAuditado {
     idRecetaGlobal: string | null;
 
     /**
+     * Número de receta en el sistema Plex (campo NumReceta de reccabecera).
+     */
+    @Column({ name: 'numero_receta', type: 'varchar', nullable: true })
+    numeroReceta: string | null;
+
+    /**
      * ID de la caja asociada a la receta.
      * Nota: Futura Foreign Key a Caja. Actualmente se guarda con IDGLOBAL.
      */
