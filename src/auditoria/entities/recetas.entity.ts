@@ -3,7 +3,7 @@ import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
 /**
  * Entidad que representa una receta auditada en el sistema.
  * Almacena la información de recetas que han sido validadas y auditadas
- * mediante el proceso de verificación con el sistema Plex y MisValidaciones.
+ * mediante el proceso de verificación con el sistema Plex.
  */
 @Entity('receta-auditado')
 @Unique(['idReceta'])
