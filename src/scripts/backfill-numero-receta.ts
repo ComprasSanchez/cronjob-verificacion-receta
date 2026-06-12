@@ -24,12 +24,12 @@ async function bootstrap() {
         const auditoriaService = app.get(AuditoriaService);
         const plexService = app.get(PlexService);
 
-        // 1. Todas las filas de receta-auditado
-        const idRecetas = await auditoriaService.getTodosLosIdRecetas();
-        logger.log(`🔎 ${idRecetas.length} recetas a actualizar`);
+        // 1. Filas en Postgres sin numero_receta
+        const idRecetas = await auditoriaService.getIdRecetasSinNumero();
+        logger.log(`🔎 ${idRecetas.length} recetas sin numero_receta`);
 
         if (idRecetas.length === 0) {
-            logger.log('✅ No hay registros. Saliendo.');
+            logger.log('✅ Nada que backfillear. Saliendo.');
             return;
         }
 

@@ -89,8 +89,11 @@ export class PlexService {
             resultados.push(...filas);
         }
 
+        const conValor = resultados.filter(
+            (r) => r.NumReceta !== null && r.NumReceta !== undefined && `${r.NumReceta}` !== '',
+        ).length;
         this.logger.debug(
-            `✅ NumReceta encontrado para ${resultados.length}/${idRecetas.length} IDReceta`,
+            `✅ Plex devolvió ${resultados.length}/${idRecetas.length} IDReceta | con NumReceta no nulo: ${conValor}`,
         );
         return resultados;
     }

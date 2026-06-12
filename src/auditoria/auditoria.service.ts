@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RecetaAuditado } from './entities/recetas.entity';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { IRecetaAuditado } from './interface/receta-auditada.interface';
 import { CajaAuditada } from './entities/caja-auditada.entity';
 
@@ -58,18 +58,19 @@ export class AuditoriaService {
     }
 
     /**
-     * Devuelve todos los idReceta de la tabla receta-auditado.
+     * Devuelve los idReceta de las filas que todavía no tienen numero_receta cargado.
      */
-    async getTodosLosIdRecetas(): Promise<number[]> {
+    async getIdRecetasSinNumero(): Promise<number[]> {
         const filas = await this.recetaAuditaRepository.find({
             select: { idReceta: true },
+            where: { numeroReceta: IsNull() },
         });
         return filas.map((f) => f.idReceta);
     }
 
     /**
      * Actualiza numero_receta en lotes a partir de un mapa idReceta -> NumReceta.
-     * Pisa el valor en todas las filas que matcheen el idReceta.
+     * Solo pisa filas donde numero_receta sigue en NULL.
      */
     async backfillNumeroReceta(
         valores: { idReceta: number; numeroReceta: string | null }[],
@@ -94,6 +95,7 @@ export class AuditoriaService {
         SET numero_receta = v.numero_receta
         FROM (VALUES ${tuples}) AS v(id_receta, numero_receta)
         WHERE r.id_receta = v.id_receta::int
+          AND r.numero_receta IS NULL
         RETURNING r.id_receta;
       `;
 
