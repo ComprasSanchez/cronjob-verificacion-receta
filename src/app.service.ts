@@ -17,6 +17,39 @@ export class AppService implements OnModuleInit {
     async onModuleInit() {
         this.logger.debug('🚀 Ejecutando validación inicial al iniciar la app..., si no esta comentada xd');
         await this.validarRecetas(); // 👈 se ejecuta apenas se levanta
+        await this.backfillNumeroReceta(); // 👈 completa numero_receta de los registros viejos
+    }
+
+    /**
+     * Backfill al arranque: completa numero_receta SOLO en las recetas que lo tienen en NULL,
+     * tomando el valor desde Plex (NumReceta) por IDReceta.
+     */
+    async backfillNumeroReceta() {
+        try {
+            const idRecetas = await this.auditoriaService.getIdRecetasSinNumero();
+            this.logger.debug(`🔎 Backfill: ${idRecetas.length} recetas sin numero_receta`);
+
+            if (idRecetas.length === 0) {
+                this.logger.debug('✅ Backfill: no hay recetas para completar.');
+                return;
+            }
+
+            const filasPlex = await this.plexService.getNumRecetasByIds(idRecetas);
+            const valores = filasPlex.map((f) => ({
+                idReceta: f.IDReceta,
+                numeroReceta: f.NumReceta ?? null,
+            }));
+
+            const resultado = await this.auditoriaService.backfillNumeroReceta(valores);
+            this.logger.debug(
+                `🏁 Backfill finalizado → Candidatas: ${resultado.total} | Actualizadas: ${resultado.actualizadas}`,
+            );
+        } catch (err) {
+            this.logger.error(
+                '❌ Error en backfill de numero_receta',
+                err instanceof Error ? err.stack : String(err),
+            );
+        }
     }
 
     @Cron(CronExpression.EVERY_6_HOURS)
