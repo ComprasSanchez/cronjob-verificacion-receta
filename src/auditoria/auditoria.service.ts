@@ -25,9 +25,12 @@ export class AuditoriaService {
 
         this.logger.log(`📦 Iniciando UPSERT individual de ${recetas.length} recetas auditadas...`);
 
+        const total = recetas.length;
+        const logEvery = total >= 1000 ? 1000 : 100;
         let insertadas = 0;
         let actualizadas = 0;
         let fallidas = 0;
+        let procesadas = 0;
 
         for (const receta of recetas) {
             try {
@@ -46,10 +49,16 @@ export class AuditoriaService {
                     `❌ Error en UPSERT de receta (IDReceta: ${receta.idReceta}, IDComprobante: ${receta.idComprobante})`,
                     error instanceof Error ? error.message : String(error),
                 );
+            } finally {
+                procesadas++;
+                if (procesadas % logEvery === 0 || procesadas === total) {
+                    this.logger.log(
+                        `⏳ Progreso UPSERT recetas: ${procesadas}/${total} | 🆕 ${insertadas} | 🔁 ${actualizadas} | ❌ ${fallidas}`,
+                    );
+                }
             }
         }
 
-        const total = recetas.length;
         this.logger.log(
             `📊 UPSERT finalizado → Total: ${total} | 🆕 Insertadas: ${insertadas} | 🔁 Actualizadas: ${actualizadas} | ❌ Fallidas: ${fallidas}`,
         );
