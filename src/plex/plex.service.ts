@@ -10,7 +10,7 @@ export class PlexService {
     constructor(
         @InjectDataSource('mysql-plex')
         private dataSource: DataSource,
-    ) { }
+    ) {}
 
     async getRecetasPlex(fechaDesde: string, fechaHasta: string): Promise<RecetaPlex[]> {
         const sql = `
@@ -94,6 +94,41 @@ export class PlexService {
         ).length;
         this.logger.debug(
             `✅ Plex devolvió ${resultados.length}/${idRecetas.length} IDReceta | con NumReceta no nulo: ${conValor}`,
+        );
+        return resultados;
+    }
+
+    /**
+     * Devuelve el IDComprobanteRef de Plex para una lista de IDReceta.
+     * Solo incluye comprobantes que empiezan con NC.
+     */
+    async getIdComprobanteRefByIds(
+        idRecetas: number[],
+        chunkSize = 10000,
+    ): Promise<{ IDReceta: number; IDComprobanteRef: number | null }[]> {
+        const resultados: { IDReceta: number; IDComprobanteRef: number | null }[] = [];
+
+        for (let i = 0; i < idRecetas.length; i += chunkSize) {
+            const chunk = idRecetas.slice(i, i + chunkSize);
+            const placeholders = chunk.map(() => '?').join(', ');
+            const sql = `
+        SELECT reccabecera.IDReceta, factcabecera.IDComprobanteRef
+        FROM reccabecera
+        LEFT JOIN factcabecera ON reccabecera.IDComprobante = factcabecera.IDComprobante
+        WHERE reccabecera.IDReceta IN (${placeholders})
+          AND factcabecera.Tipo = 'NC';
+      `;
+            const filas = await this.dataSource.query<
+                { IDReceta: number; IDComprobanteRef: number | null }[]
+            >(sql, chunk);
+            resultados.push(...filas);
+        }
+
+        const conValor = resultados.filter(
+            (r) => r.IDComprobanteRef !== null && r.IDComprobanteRef !== undefined,
+        ).length;
+        this.logger.debug(
+            `✅ Plex devolvió ${resultados.length}/${idRecetas.length} IDReceta NC | con IDComprobanteRef no nulo: ${conValor}`,
         );
         return resultados;
     }

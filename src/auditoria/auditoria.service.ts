@@ -69,6 +69,20 @@ export class AuditoriaService {
     }
 
     /**
+     * Devuelve los idReceta NC de las filas que todavía no tienen id_comprobante_ref cargado.
+     */
+    async getIdRecetasSinIdComprobanteRef(): Promise<number[]> {
+        const filas = await this.recetaAuditaRepository
+            .createQueryBuilder('receta')
+            .select('receta.idReceta', 'idReceta')
+            .where('receta.idComprobanteRef IS NULL')
+            .andWhere("receta.comprobante LIKE 'NC%'")
+            .getRawMany<{ idReceta: number }>();
+
+        return filas.map((f) => f.idReceta);
+    }
+
+    /**
      * Actualiza numero_receta en lotes a partir de un mapa idReceta -> NumReceta.
      * Solo pisa filas donde numero_receta sigue en NULL.
      */
@@ -111,6 +125,53 @@ export class AuditoriaService {
 
         this.logger.log(
             `📊 Backfill numero_receta → Total candidatas: ${valores.length} | Actualizadas: ${actualizadas}`,
+        );
+        return { total: valores.length, actualizadas };
+    }
+
+    /**
+     * Actualiza id_comprobante_ref en lotes a partir de un mapa idReceta -> IDComprobanteRef.
+     * Solo pisa filas NC donde id_comprobante_ref sigue en NULL.
+     */
+    async backfillIdComprobanteRef(
+        valores: { idReceta: number; idComprobanteRef: number | null }[],
+        chunkSize = 10000,
+    ): Promise<{ total: number; actualizadas: number }> {
+        let actualizadas = 0;
+
+        for (let i = 0; i < valores.length; i += chunkSize) {
+            const chunk = valores.slice(i, i + chunkSize);
+
+            const params: (number | null)[] = [];
+            const tuples = chunk
+                .map((v, idx) => {
+                    params.push(v.idReceta, v.idComprobanteRef);
+                    return `($${idx * 2 + 1}, $${idx * 2 + 2})`;
+                })
+                .join(', ');
+
+            const sql = `
+        UPDATE "receta-auditado" AS r
+        SET id_comprobante_ref = v.id_comprobante_ref
+        FROM (VALUES ${tuples}) AS v(id_receta, id_comprobante_ref)
+        WHERE r.id_receta = v.id_receta::int
+          AND r.id_comprobante_ref IS NULL
+          AND r.comprobante LIKE 'NC%'
+        RETURNING r.id_receta;
+      `;
+
+            const result = await this.recetaAuditaRepository.query<{ id_receta: number }[]>(
+                sql,
+                params,
+            );
+            actualizadas += Array.isArray(result) ? result.length : 0;
+            this.logger.debug(
+                `🔁 Backfill IDComprobanteRef lote ${i / chunkSize + 1}: ${chunk.length} filas procesadas`,
+            );
+        }
+
+        this.logger.log(
+            `📊 Backfill id_comprobante_ref → Total candidatas: ${valores.length} | Actualizadas: ${actualizadas}`,
         );
         return { total: valores.length, actualizadas };
     }

@@ -12,12 +12,15 @@ export class AppService implements OnModuleInit {
     constructor(
         private readonly auditoriaService: AuditoriaService,
         private readonly plexService: PlexService,
-    ) { }
+    ) {}
 
     async onModuleInit() {
-        this.logger.debug('🚀 Ejecutando validación inicial al iniciar la app..., si no esta comentada xd');
+        this.logger.debug(
+            '🚀 Ejecutando validación inicial al iniciar la app..., si no esta comentada xd',
+        );
         await this.validarRecetas(); // 👈 se ejecuta apenas se levanta
         await this.backfillNumeroReceta(); // 👈 completa numero_receta de los registros viejos
+        await this.backfillIdComprobanteRef(); // 👈 completa id_comprobante_ref de NC en los registros viejos
     }
 
     /**
@@ -47,6 +50,47 @@ export class AppService implements OnModuleInit {
         } catch (err) {
             this.logger.error(
                 '❌ Error en backfill de numero_receta',
+                err instanceof Error ? err.stack : String(err),
+            );
+        }
+    }
+
+    /**
+     * Backfill al arranque: completa id_comprobante_ref SOLO en NC y SOLO si está en NULL,
+     * tomando el valor desde Plex por IDReceta.
+     */
+    async backfillIdComprobanteRef() {
+        try {
+            const idRecetas = await this.auditoriaService.getIdRecetasSinIdComprobanteRef();
+            this.logger.debug(`🔎 Backfill NC: ${idRecetas.length} recetas sin id_comprobante_ref`);
+
+            if (idRecetas.length === 0) {
+                this.logger.debug(
+                    '✅ Backfill id_comprobante_ref: no hay recetas NC para completar.',
+                );
+                return;
+            }
+
+            const filasPlex = await this.plexService.getIdComprobanteRefByIds(idRecetas);
+            const valores = filasPlex.map((f) => ({
+                idReceta: f.IDReceta,
+                idComprobanteRef: f.IDComprobanteRef ?? null,
+            }));
+
+            const sinMatch = idRecetas.length - valores.length;
+            if (sinMatch > 0) {
+                this.logger.warn(
+                    `⚠️ ${sinMatch} recetas NC no devolvieron IDComprobanteRef en Plex (quedan en NULL)`,
+                );
+            }
+
+            const resultado = await this.auditoriaService.backfillIdComprobanteRef(valores);
+            this.logger.debug(
+                `🏁 Backfill id_comprobante_ref finalizado → Candidatas: ${resultado.total} | Actualizadas: ${resultado.actualizadas}`,
+            );
+        } catch (err) {
+            this.logger.error(
+                '❌ Error en backfill de id_comprobante_ref',
                 err instanceof Error ? err.stack : String(err),
             );
         }
@@ -117,6 +161,7 @@ export class AppService implements OnModuleInit {
             idReceta: recetaPlex.IDReceta,
             idRecetaGlobal: recetaPlex.IdRecetaGlobal ?? null,
             numeroReceta: recetaPlex.NumReceta ?? null,
+            idComprobanteRef: recetaPlex.IDComprobanteRef ?? null,
             idCaja: recetaPlex.idGlobal, // await this.auditoriaService.getCajaSegunGlobal(recetaPlex.idGlobal),
             fechaAperturaCaja: recetaPlex.FechaApertura,
             fechaCierreCaja: recetaPlex.FechaCierre,

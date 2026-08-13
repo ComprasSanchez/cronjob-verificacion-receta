@@ -33,7 +33,7 @@ export const auditoriaDatabase = (configService: ConfigService): TypeOrmModuleOp
     ssl:
         configService.get<string>('PG_SSL') === 'true'
             ? {
-                rejectUnauthorized: false,
-            }
+                  rejectUnauthorized: false,
+              }
             : false,
 });

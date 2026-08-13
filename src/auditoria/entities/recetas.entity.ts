@@ -44,6 +44,9 @@ export class RecetaAuditado {
     @Column({ name: 'numero_receta', type: 'varchar', nullable: true })
     numeroReceta: string | null;
 
+    @Column({ name: 'id_comprobante_ref', type: 'int', nullable: true })
+    idComprobanteRef: number | null;
+
     /**
      * ID de la caja asociada a la receta.
      * Nota: Futura Foreign Key a Caja. Actualmente se guarda con IDGLOBAL.
@@ -84,7 +87,7 @@ export class RecetaAuditado {
     @Column({ name: 'fecha_prescripcion', type: 'date', nullable: true })
     fechaPrescipcion: Date;
 
-    @Column({ name: 'fecha_dispensacion', type: 'date'})
+    @Column({ name: 'fecha_dispensacion', type: 'date' })
     fechaDispensacion: Date;
 
     /**
