@@ -161,7 +161,7 @@ export class AuditoriaService {
 
             const sql = `
         UPDATE "receta-auditado" AS r
-        SET id_comprobante_ref = v.id_comprobante_ref
+        SET id_comprobante_ref = v.id_comprobante_ref::int
         FROM (VALUES ${tuples}) AS v(id_receta, id_comprobante_ref)
         WHERE r.id_receta = v.id_receta::int
           AND r.id_comprobante_ref IS NULL
