@@ -13,8 +13,11 @@ export interface IRecetaAuditado {
     /** Número de receta en el sistema Plex (campo NumReceta) */
     numeroReceta: string | null;
 
-    /** ID del comprobante de referencia en Plex */
-    idComprobanteRef: number | null;
+    /** ID global de la caja en Plex */
+    idGlobal: number | null;
+
+    /** ID global de referencia resuelto desde factlineas */
+    refIdGlobal: number | null;
 
     /** ID de la caja asociada a la receta */
     idCaja: number | null;

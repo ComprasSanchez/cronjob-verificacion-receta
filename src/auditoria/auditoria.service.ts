@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RecetaAuditado } from './entities/recetas.entity';
-import { IsNull, Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import { IRecetaAuditado } from './interface/receta-auditada.interface';
 import { CajaAuditada } from './entities/caja-auditada.entity';
 
@@ -17,41 +17,45 @@ export class AuditoriaService {
         private readonly cajaAuditaba: Repository<CajaAuditada>,
     ) {}
 
-    async bulkRecetaAudita(recetas: IRecetaAuditado[]) {
+    async bulkRecetaAudita(recetas: IRecetaAuditado[], chunkSize = 500) {
         if (!recetas?.length) {
             this.logger.warn('⚠️ No se recibieron recetas para auditar.');
             return { total: 0, insertadas: 0, actualizadas: 0, fallidas: 0 };
         }
 
-        this.logger.log(`📦 Iniciando UPSERT individual de ${recetas.length} recetas auditadas...`);
+        this.logger.log(
+            `📦 Iniciando UPSERT por lotes de ${recetas.length} recetas auditadas (chunk: ${chunkSize})...`,
+        );
 
         const total = recetas.length;
-        const logEvery = total >= 1000 ? 1000 : 100;
         let insertadas = 0;
         let actualizadas = 0;
         let fallidas = 0;
         let procesadas = 0;
 
-        for (const receta of recetas) {
-            try {
-                // Ejecutar upsert individual (por idReceta)
-                const result = await this.recetaAuditaRepository.upsert(receta, ['idReceta']);
+        for (let i = 0; i < recetas.length; i += chunkSize) {
+            const chunk = recetas.slice(i, i + chunkSize);
+            const ids = chunk.map((receta) => receta.idReceta);
 
-                // `result.generatedMaps` indica si fue insert
-                if (result.generatedMaps.length > 0) {
-                    insertadas++;
-                } else {
-                    actualizadas++;
-                }
+            try {
+                const existentes = await this.recetaAuditaRepository.find({
+                    select: { idReceta: true },
+                    where: { idReceta: In(ids) },
+                });
+
+                await this.recetaAuditaRepository.upsert(chunk, ['idReceta']);
+
+                actualizadas += existentes.length;
+                insertadas += chunk.length - existentes.length;
             } catch (error) {
-                fallidas++;
+                fallidas += chunk.length;
                 this.logger.error(
-                    `❌ Error en UPSERT de receta (IDReceta: ${receta.idReceta}, IDComprobante: ${receta.idComprobante})`,
+                    `❌ Error en UPSERT de lote (${i + 1}-${i + chunk.length})`,
                     error instanceof Error ? error.message : String(error),
                 );
             } finally {
-                procesadas++;
-                if (procesadas % logEvery === 0 || procesadas === total) {
+                procesadas += chunk.length;
+                if (procesadas === total || procesadas % Math.max(chunkSize, 1000) === 0) {
                     this.logger.log(
                         `⏳ Progreso UPSERT recetas: ${procesadas}/${total} | 🆕 ${insertadas} | 🔁 ${actualizadas} | ❌ ${fallidas}`,
                     );
@@ -78,14 +82,26 @@ export class AuditoriaService {
     }
 
     /**
-     * Devuelve los idReceta NC de las filas que todavía no tienen id_comprobante_ref cargado.
+     * Devuelve los idReceta de las filas que todavía no tienen id_global cargado.
      */
-    async getIdRecetasSinIdComprobanteRef(): Promise<number[]> {
+    async getIdRecetasSinIdGlobal(): Promise<number[]> {
         const filas = await this.recetaAuditaRepository
             .createQueryBuilder('receta')
             .select('receta.idReceta', 'idReceta')
-            .where('receta.idComprobanteRef IS NULL')
-            .andWhere("receta.comprobante LIKE 'NC%'")
+            .where('receta.idGlobal IS NULL')
+            .getRawMany<{ idReceta: number }>();
+
+        return filas.map((f) => f.idReceta);
+    }
+
+    /**
+     * Devuelve los idReceta de las filas que todavía no tienen ref_id_global cargado.
+     */
+    async getIdRecetasSinRefIdGlobal(): Promise<number[]> {
+        const filas = await this.recetaAuditaRepository
+            .createQueryBuilder('receta')
+            .select('receta.idReceta', 'idReceta')
+            .where('receta.refIdGlobal IS NULL')
             .getRawMany<{ idReceta: number }>();
 
         return filas.map((f) => f.idReceta);
@@ -139,11 +155,11 @@ export class AuditoriaService {
     }
 
     /**
-     * Actualiza id_comprobante_ref en lotes a partir de un mapa idReceta -> IDComprobanteRef.
-     * Solo pisa filas NC donde id_comprobante_ref sigue en NULL.
+     * Actualiza id_global en lotes a partir de un mapa idReceta -> idGlobal.
+     * Solo pisa filas donde id_global sigue en NULL.
      */
-    async backfillIdComprobanteRef(
-        valores: { idReceta: number; idComprobanteRef: number | null }[],
+    async backfillIdGlobal(
+        valores: { idReceta: number; idGlobal: number | null }[],
         chunkSize = 10000,
     ): Promise<{ total: number; actualizadas: number }> {
         let actualizadas = 0;
@@ -154,18 +170,17 @@ export class AuditoriaService {
             const params: (number | null)[] = [];
             const tuples = chunk
                 .map((v, idx) => {
-                    params.push(v.idReceta, v.idComprobanteRef);
+                    params.push(v.idReceta, v.idGlobal);
                     return `($${idx * 2 + 1}, $${idx * 2 + 2})`;
                 })
                 .join(', ');
 
             const sql = `
         UPDATE "receta-auditado" AS r
-        SET id_comprobante_ref = v.id_comprobante_ref::int
-        FROM (VALUES ${tuples}) AS v(id_receta, id_comprobante_ref)
+        SET id_global = v.id_global::int
+        FROM (VALUES ${tuples}) AS v(id_receta, id_global)
         WHERE r.id_receta = v.id_receta::int
-          AND r.id_comprobante_ref IS NULL
-          AND r.comprobante LIKE 'NC%'
+          AND r.id_global IS NULL
         RETURNING r.id_receta;
       `;
 
@@ -175,12 +190,58 @@ export class AuditoriaService {
             );
             actualizadas += Array.isArray(result) ? result.length : 0;
             this.logger.debug(
-                `🔁 Backfill IDComprobanteRef lote ${i / chunkSize + 1}: ${chunk.length} filas procesadas`,
+                `🔁 Backfill idGlobal lote ${i / chunkSize + 1}: ${chunk.length} filas procesadas`,
             );
         }
 
         this.logger.log(
-            `📊 Backfill id_comprobante_ref → Total candidatas: ${valores.length} | Actualizadas: ${actualizadas}`,
+            `📊 Backfill id_global → Total candidatas: ${valores.length} | Actualizadas: ${actualizadas}`,
+        );
+        return { total: valores.length, actualizadas };
+    }
+
+    /**
+     * Actualiza ref_id_global en lotes a partir de un mapa idReceta -> RefIDGlobal.
+     * Solo pisa filas donde ref_id_global sigue en NULL.
+     */
+    async backfillRefIdGlobal(
+        valores: { idReceta: number; refIdGlobal: number | null }[],
+        chunkSize = 10000,
+    ): Promise<{ total: number; actualizadas: number }> {
+        let actualizadas = 0;
+
+        for (let i = 0; i < valores.length; i += chunkSize) {
+            const chunk = valores.slice(i, i + chunkSize);
+
+            const params: (number | null)[] = [];
+            const tuples = chunk
+                .map((v, idx) => {
+                    params.push(v.idReceta, v.refIdGlobal);
+                    return `($${idx * 2 + 1}, $${idx * 2 + 2})`;
+                })
+                .join(', ');
+
+            const sql = `
+        UPDATE "receta-auditado" AS r
+        SET ref_id_global = v.ref_id_global::int
+        FROM (VALUES ${tuples}) AS v(id_receta, ref_id_global)
+        WHERE r.id_receta = v.id_receta::int
+          AND r.ref_id_global IS NULL
+        RETURNING r.id_receta;
+      `;
+
+            const result = await this.recetaAuditaRepository.query<{ id_receta: number }[]>(
+                sql,
+                params,
+            );
+            actualizadas += Array.isArray(result) ? result.length : 0;
+            this.logger.debug(
+                `🔁 Backfill refIdGlobal lote ${i / chunkSize + 1}: ${chunk.length} filas procesadas`,
+            );
+        }
+
+        this.logger.log(
+            `📊 Backfill ref_id_global → Total candidatas: ${valores.length} | Actualizadas: ${actualizadas}`,
         );
         return { total: valores.length, actualizadas };
     }

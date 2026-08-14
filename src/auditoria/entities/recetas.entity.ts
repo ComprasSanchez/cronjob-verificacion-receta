@@ -44,8 +44,11 @@ export class RecetaAuditado {
     @Column({ name: 'numero_receta', type: 'varchar', nullable: true })
     numeroReceta: string | null;
 
-    @Column({ name: 'id_comprobante_ref', type: 'int', nullable: true })
-    idComprobanteRef: number | null;
+    @Column({ name: 'id_global', type: 'int', nullable: true })
+    idGlobal: number | null;
+
+    @Column({ name: 'ref_id_global', type: 'int', nullable: true })
+    refIdGlobal: number | null;
 
     /**
      * ID de la caja asociada a la receta.

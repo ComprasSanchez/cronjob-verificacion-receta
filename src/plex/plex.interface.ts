@@ -2,7 +2,8 @@ export interface RecetaPlex {
     IDComprobante: number;
     IDReceta: number;
     IdRecetaGlobal: string;
-    idGlobal: number;
+    idGlobal: number | null;
+    RefIDGlobal: number | null;
     FechaApertura: Date | null;
     FechaCierre: Date | null;
     Sucursal: number;
@@ -24,5 +25,4 @@ export interface RecetaPlex {
     Comprobante: Buffer;
     Operador: string;
     Tipo: string;
-    IDComprobanteRef: number | null;
 }

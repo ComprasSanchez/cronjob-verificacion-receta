@@ -20,7 +20,8 @@ export class AppService implements OnModuleInit {
         );
         await this.validarRecetas(); // 👈 se ejecuta apenas se levanta
         await this.backfillNumeroReceta(); // 👈 completa numero_receta de los registros viejos
-        await this.backfillIdComprobanteRef(); // 👈 completa id_comprobante_ref de NC en los registros viejos
+        await this.backfillIdGlobal(); // 👈 completa id_global de los registros viejos
+        await this.backfillRefIdGlobal(); // 👈 completa ref_id_global de los registros viejos
     }
 
     /**
@@ -56,41 +57,78 @@ export class AppService implements OnModuleInit {
     }
 
     /**
-     * Backfill al arranque: completa id_comprobante_ref SOLO en NC y SOLO si está en NULL,
+     * Backfill al arranque: completa id_global SOLO si está en NULL,
      * tomando el valor desde Plex por IDReceta.
      */
-    async backfillIdComprobanteRef() {
+    async backfillIdGlobal() {
         try {
-            const idRecetas = await this.auditoriaService.getIdRecetasSinIdComprobanteRef();
-            this.logger.debug(`🔎 Backfill NC: ${idRecetas.length} recetas sin id_comprobante_ref`);
+            const idRecetas = await this.auditoriaService.getIdRecetasSinIdGlobal();
+            this.logger.debug(`🔎 Backfill: ${idRecetas.length} recetas sin id_global`);
 
             if (idRecetas.length === 0) {
-                this.logger.debug(
-                    '✅ Backfill id_comprobante_ref: no hay recetas NC para completar.',
-                );
+                this.logger.debug('✅ Backfill id_global: no hay recetas para completar.');
                 return;
             }
 
-            const filasPlex = await this.plexService.getIdComprobanteRefByIds(idRecetas);
+            const filasPlex = await this.plexService.getIdGlobalByIds(idRecetas);
             const valores = filasPlex.map((f) => ({
                 idReceta: f.IDReceta,
-                idComprobanteRef: f.IDComprobanteRef ?? null,
+                idGlobal: f.idGlobal ?? null,
             }));
 
             const sinMatch = idRecetas.length - valores.length;
             if (sinMatch > 0) {
                 this.logger.warn(
-                    `⚠️ ${sinMatch} recetas NC no devolvieron IDComprobanteRef en Plex (quedan en NULL)`,
+                    `⚠️ ${sinMatch} recetas no devolvieron idGlobal en Plex (quedan en NULL)`,
                 );
             }
 
-            const resultado = await this.auditoriaService.backfillIdComprobanteRef(valores);
+            const resultado = await this.auditoriaService.backfillIdGlobal(valores);
             this.logger.debug(
-                `🏁 Backfill id_comprobante_ref finalizado → Candidatas: ${resultado.total} | Actualizadas: ${resultado.actualizadas}`,
+                `🏁 Backfill id_global finalizado → Candidatas: ${resultado.total} | Actualizadas: ${resultado.actualizadas}`,
             );
         } catch (err) {
             this.logger.error(
-                '❌ Error en backfill de id_comprobante_ref',
+                '❌ Error en backfill de id_global',
+                err instanceof Error ? err.stack : String(err),
+            );
+        }
+    }
+
+    /**
+     * Backfill al arranque: completa ref_id_global SOLO si está en NULL,
+     * tomando el valor resuelto desde factlineas por IDReceta.
+     */
+    async backfillRefIdGlobal() {
+        try {
+            const idRecetas = await this.auditoriaService.getIdRecetasSinRefIdGlobal();
+            this.logger.debug(`🔎 Backfill: ${idRecetas.length} recetas sin ref_id_global`);
+
+            if (idRecetas.length === 0) {
+                this.logger.debug('✅ Backfill ref_id_global: no hay recetas para completar.');
+                return;
+            }
+
+            const filasPlex = await this.plexService.getRefIdGlobalByIds(idRecetas);
+            const valores = filasPlex.map((f) => ({
+                idReceta: f.IDReceta,
+                refIdGlobal: f.RefIDGlobal ?? null,
+            }));
+
+            const sinMatch = idRecetas.length - valores.length;
+            if (sinMatch > 0) {
+                this.logger.warn(
+                    `⚠️ ${sinMatch} recetas no devolvieron RefIDGlobal en Plex (quedan en NULL)`,
+                );
+            }
+
+            const resultado = await this.auditoriaService.backfillRefIdGlobal(valores);
+            this.logger.debug(
+                `🏁 Backfill ref_id_global finalizado → Candidatas: ${resultado.total} | Actualizadas: ${resultado.actualizadas}`,
+            );
+        } catch (err) {
+            this.logger.error(
+                '❌ Error en backfill de ref_id_global',
                 err instanceof Error ? err.stack : String(err),
             );
         }
@@ -161,7 +199,8 @@ export class AppService implements OnModuleInit {
             idReceta: recetaPlex.IDReceta,
             idRecetaGlobal: recetaPlex.IdRecetaGlobal ?? null,
             numeroReceta: recetaPlex.NumReceta ?? null,
-            idComprobanteRef: recetaPlex.IDComprobanteRef ?? null,
+            idGlobal: recetaPlex.idGlobal ?? null,
+            refIdGlobal: recetaPlex.RefIDGlobal ?? null,
             idCaja: recetaPlex.idGlobal, // await this.auditoriaService.getCajaSegunGlobal(recetaPlex.idGlobal),
             fechaAperturaCaja: recetaPlex.FechaApertura,
             fechaCierreCaja: recetaPlex.FechaCierre,
