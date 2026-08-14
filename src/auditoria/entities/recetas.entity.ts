@@ -18,7 +18,7 @@ export class RecetaAuditado {
      * ID del comprobante asociado a la receta en el sistema Plex.
      * Relaciona la receta con la factura/comprobante correspondiente.
      */
-    @Column({ name: 'id_comprobante', type: 'int' })
+    @Column({ name: 'id_comprobante', type: 'bigint' })
     idComprobante: number;
 
     /**
@@ -32,7 +32,7 @@ export class RecetaAuditado {
      * ID de la receta en el sistema Plex.
      * Identificador único de la receta en la base de datos Plex.
      */
-    @Column({ name: 'id_receta', type: 'int' })
+    @Column({ name: 'id_receta', type: 'bigint' })
     idReceta: number;
 
     @Column({ name: 'id_receta_global', type: 'varchar', nullable: true })
