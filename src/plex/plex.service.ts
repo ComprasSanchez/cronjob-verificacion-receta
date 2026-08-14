@@ -19,7 +19,6 @@ export class PlexService {
         reccabecera.IDReceta,
         reccabecera.IdRecetaGlobal,
         cajapartes.idGlobal,
-        factlineas_ref.RefIDGlobal,
         cajapartes.FechaApertura,
         cajapartes.FechaCierre,
         reccabecera.Sucursal,
@@ -44,17 +43,6 @@ export class PlexService {
         factcabecera.Tipo
       FROM reccabecera
       LEFT JOIN factcabecera ON reccabecera.IDComprobante = factcabecera.IDComprobante
-      LEFT JOIN (
-        SELECT
-          factlineas.IDComprobante,
-          CASE
-            WHEN COUNT(*) = COUNT(factlineas.RefIDGlobal)
-             AND COUNT(DISTINCT factlineas.RefIDGlobal) = 1 THEN MIN(factlineas.RefIDGlobal)
-            ELSE NULL
-          END AS RefIDGlobal
-        FROM factlineas
-        GROUP BY factlineas.IDComprobante
-      ) factlineas_ref ON factcabecera.IDComprobante = factlineas_ref.IDComprobante
       LEFT JOIN obsociales ON reccabecera.IDObSoc = obsociales.CodObSoc 
       LEFT JOIN operadores ON reccabecera.IDUsuario = operadores.IDOperador
       LEFT JOIN cajapartes ON factcabecera.IDCajaParte = cajapartes.IDCajaParte
@@ -62,10 +50,17 @@ export class PlexService {
     `;
 
         try {
-            const recetas = await this.dataSource.query<RecetaPlex[]>(sql, [
+            const recetasBase = await this.dataSource.query<RecetaPlex[]>(sql, [
                 fechaDesde,
                 fechaHasta,
             ]);
+            const refIdGlobalByComprobante = await this.getRefIdGlobalByComprobantes(
+                recetasBase.map((receta) => receta.IDComprobante),
+            );
+            const recetas = recetasBase.map((receta) => ({
+                ...receta,
+                RefIDGlobal: refIdGlobalByComprobante.get(receta.IDComprobante) ?? null,
+            }));
             this.logger.debug(
                 `✅ ${recetas.length} recetas encontradas entre ${fechaDesde} y ${fechaHasta}`,
             );
@@ -143,6 +138,51 @@ export class PlexService {
         return resultados;
     }
 
+    private async getRefIdGlobalByComprobantes(
+        idComprobantes: number[],
+        chunkSize = 1000,
+    ): Promise<Map<number, number | null>> {
+        const idsUnicos = [
+            ...new Set(idComprobantes.filter((id) => id !== null && id !== undefined)),
+        ];
+        const resultado = new Map<number, number | null>();
+
+        if (!idsUnicos.length) {
+            return resultado;
+        }
+
+        for (let i = 0; i < idsUnicos.length; i += chunkSize) {
+            const chunk = idsUnicos.slice(i, i + chunkSize);
+            const placeholders = chunk.map(() => '?').join(', ');
+            const sql = `
+        SELECT
+          factlineas.IDComprobante,
+          CASE
+            WHEN COUNT(*) = COUNT(factlineas.RefIDGlobal)
+             AND COUNT(DISTINCT factlineas.RefIDGlobal) = 1 THEN MIN(factlineas.RefIDGlobal)
+            ELSE NULL
+          END AS RefIDGlobal
+        FROM factlineas
+        WHERE factlineas.IDComprobante IN (${placeholders})
+        GROUP BY factlineas.IDComprobante;
+      `;
+            const filas = await this.dataSource.query<
+                { IDComprobante: number; RefIDGlobal: number | null }[]
+            >(sql, chunk);
+
+            for (const fila of filas) {
+                resultado.set(fila.IDComprobante, fila.RefIDGlobal ?? null);
+            }
+        }
+
+        const conValor = [...resultado.values()].filter((valor) => valor !== null).length;
+        this.logger.debug(
+            `✅ Plex resolvió RefIDGlobal para ${resultado.size}/${idsUnicos.length} comprobantes | con valor no nulo: ${conValor}`,
+        );
+
+        return resultado;
+    }
+
     /**
      * Devuelve el RefIDGlobal resuelto desde factlineas para una lista de IDReceta.
      * Solo se informa cuando todas las lineas del comprobante coinciden en el mismo RefIDGlobal.
@@ -159,26 +199,24 @@ export class PlexService {
             const sql = `
         SELECT
           reccabecera.IDReceta,
-          factlineas_ref.RefIDGlobal
+          factcabecera.IDComprobante
         FROM reccabecera
         LEFT JOIN factcabecera ON reccabecera.IDComprobante = factcabecera.IDComprobante
-        LEFT JOIN (
-          SELECT
-            factlineas.IDComprobante,
-            CASE
-              WHEN COUNT(*) = COUNT(factlineas.RefIDGlobal)
-               AND COUNT(DISTINCT factlineas.RefIDGlobal) = 1 THEN MIN(factlineas.RefIDGlobal)
-              ELSE NULL
-            END AS RefIDGlobal
-          FROM factlineas
-          GROUP BY factlineas.IDComprobante
-        ) factlineas_ref ON factcabecera.IDComprobante = factlineas_ref.IDComprobante
         WHERE reccabecera.IDReceta IN (${placeholders});
       `;
             const filas = await this.dataSource.query<
-                { IDReceta: number; RefIDGlobal: number | null }[]
+                { IDReceta: number; IDComprobante: number }[]
             >(sql, chunk);
-            resultados.push(...filas);
+            const refIdGlobalByComprobante = await this.getRefIdGlobalByComprobantes(
+                filas.map((fila) => fila.IDComprobante),
+            );
+
+            resultados.push(
+                ...filas.map((fila) => ({
+                    IDReceta: fila.IDReceta,
+                    RefIDGlobal: refIdGlobalByComprobante.get(fila.IDComprobante) ?? null,
+                })),
+            );
         }
 
         const conValor = resultados.filter(
