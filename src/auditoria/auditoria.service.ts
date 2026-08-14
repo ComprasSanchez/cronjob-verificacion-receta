@@ -81,6 +81,20 @@ export class AuditoriaService {
         return filas.map((f) => f.idReceta);
     }
 
+    async getIdRecetasSinNumeroEnRango(fechaDesde: string, fechaHasta: string): Promise<number[]> {
+        const filas = await this.recetaAuditaRepository
+            .createQueryBuilder('receta')
+            .select('receta.idReceta', 'idReceta')
+            .where('receta.numeroReceta IS NULL')
+            .andWhere('receta.fechaDispensacion BETWEEN :fechaDesde AND :fechaHasta', {
+                fechaDesde,
+                fechaHasta,
+            })
+            .getRawMany<{ idReceta: number }>();
+
+        return filas.map((f) => f.idReceta);
+    }
+
     /**
      * Devuelve los idReceta de las filas que todavía no tienen id_global cargado.
      */
@@ -94,6 +108,23 @@ export class AuditoriaService {
         return filas.map((f) => f.idReceta);
     }
 
+    async getIdRecetasSinIdGlobalEnRango(
+        fechaDesde: string,
+        fechaHasta: string,
+    ): Promise<number[]> {
+        const filas = await this.recetaAuditaRepository
+            .createQueryBuilder('receta')
+            .select('receta.idReceta', 'idReceta')
+            .where('receta.idGlobal IS NULL')
+            .andWhere('receta.fechaDispensacion BETWEEN :fechaDesde AND :fechaHasta', {
+                fechaDesde,
+                fechaHasta,
+            })
+            .getRawMany<{ idReceta: number }>();
+
+        return filas.map((f) => f.idReceta);
+    }
+
     /**
      * Devuelve los idReceta de las filas que todavía no tienen ref_id_global cargado.
      */
@@ -102,6 +133,23 @@ export class AuditoriaService {
             .createQueryBuilder('receta')
             .select('receta.idReceta', 'idReceta')
             .where('receta.refIdGlobal IS NULL')
+            .getRawMany<{ idReceta: number }>();
+
+        return filas.map((f) => f.idReceta);
+    }
+
+    async getIdRecetasSinRefIdGlobalEnRango(
+        fechaDesde: string,
+        fechaHasta: string,
+    ): Promise<number[]> {
+        const filas = await this.recetaAuditaRepository
+            .createQueryBuilder('receta')
+            .select('receta.idReceta', 'idReceta')
+            .where('receta.refIdGlobal IS NULL')
+            .andWhere('receta.fechaDispensacion BETWEEN :fechaDesde AND :fechaHasta', {
+                fechaDesde,
+                fechaHasta,
+            })
             .getRawMany<{ idReceta: number }>();
 
         return filas.map((f) => f.idReceta);
@@ -133,7 +181,7 @@ export class AuditoriaService {
         UPDATE "receta-auditado" AS r
         SET numero_receta = v.numero_receta
         FROM (VALUES ${tuples}) AS v(id_receta, numero_receta)
-        WHERE r.id_receta = v.id_receta::int
+        WHERE r.id_receta = v.id_receta::bigint
           AND r.numero_receta IS NULL
         RETURNING r.id_receta;
       `;
@@ -179,7 +227,7 @@ export class AuditoriaService {
         UPDATE "receta-auditado" AS r
         SET id_global = v.id_global::bigint
         FROM (VALUES ${tuples}) AS v(id_receta, id_global)
-        WHERE r.id_receta = v.id_receta::int
+        WHERE r.id_receta = v.id_receta::bigint
           AND r.id_global IS NULL
         RETURNING r.id_receta;
       `;
@@ -225,7 +273,7 @@ export class AuditoriaService {
         UPDATE "receta-auditado" AS r
         SET ref_id_global = v.ref_id_global::bigint
         FROM (VALUES ${tuples}) AS v(id_receta, ref_id_global)
-        WHERE r.id_receta = v.id_receta::int
+        WHERE r.id_receta = v.id_receta::bigint
           AND r.ref_id_global IS NULL
         RETURNING r.id_receta;
       `;
