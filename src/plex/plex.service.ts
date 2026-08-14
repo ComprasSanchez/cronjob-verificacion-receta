@@ -18,7 +18,7 @@ export class PlexService {
         factcabecera.IDComprobante,
         reccabecera.IDReceta,
         reccabecera.IdRecetaGlobal,
-        cajapartes.idGlobal,
+        factcabecera.IDGlobal,
         cajapartes.FechaApertura,
         cajapartes.FechaCierre,
         reccabecera.Sucursal,
@@ -59,6 +59,7 @@ export class PlexService {
             );
             const recetas = recetasBase.map((receta) => ({
                 ...receta,
+                idGlobal: receta.IDGlobal ?? null,
                 RefIDGlobal: refIdGlobalByComprobante.get(receta.IDComprobante) ?? null,
             }));
             this.logger.debug(
@@ -110,27 +111,26 @@ export class PlexService {
     async getIdGlobalByIds(
         idRecetas: number[],
         chunkSize = 10000,
-    ): Promise<{ IDReceta: number; idGlobal: number | null }[]> {
-        const resultados: { IDReceta: number; idGlobal: number | null }[] = [];
+    ): Promise<{ IDReceta: number; IDGlobal: number | null }[]> {
+        const resultados: { IDReceta: number; IDGlobal: number | null }[] = [];
 
         for (let i = 0; i < idRecetas.length; i += chunkSize) {
             const chunk = idRecetas.slice(i, i + chunkSize);
             const placeholders = chunk.map(() => '?').join(', ');
             const sql = `
-        SELECT reccabecera.IDReceta, cajapartes.idGlobal
+        SELECT reccabecera.IDReceta, factcabecera.IDGlobal
         FROM reccabecera
         LEFT JOIN factcabecera ON reccabecera.IDComprobante = factcabecera.IDComprobante
-        LEFT JOIN cajapartes ON factcabecera.IDCajaParte = cajapartes.IDCajaParte
         WHERE reccabecera.IDReceta IN (${placeholders})
       `;
             const filas = await this.dataSource.query<
-                { IDReceta: number; idGlobal: number | null }[]
+                { IDReceta: number; IDGlobal: number | null }[]
             >(sql, chunk);
             resultados.push(...filas);
         }
 
         const conValor = resultados.filter(
-            (r) => r.idGlobal !== null && r.idGlobal !== undefined,
+            (r) => r.IDGlobal !== null && r.IDGlobal !== undefined,
         ).length;
         this.logger.debug(
             `✅ Plex devolvió ${resultados.length}/${idRecetas.length} IDReceta | con idGlobal no nulo: ${conValor}`,

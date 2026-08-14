@@ -33,7 +33,7 @@ async function bootstrap() {
         const filasPlex = await plexService.getIdGlobalByIds(idRecetas);
         const valores = filasPlex.map((f) => ({
             idReceta: f.IDReceta,
-            idGlobal: f.idGlobal ?? null,
+            idGlobal: f.IDGlobal ?? null,
         }));
 
         const sinMatch = idRecetas.length - valores.length;

@@ -177,7 +177,7 @@ export class AuditoriaService {
 
             const sql = `
         UPDATE "receta-auditado" AS r
-        SET id_global = v.id_global::int
+        SET id_global = v.id_global::bigint
         FROM (VALUES ${tuples}) AS v(id_receta, id_global)
         WHERE r.id_receta = v.id_receta::int
           AND r.id_global IS NULL
@@ -223,7 +223,7 @@ export class AuditoriaService {
 
             const sql = `
         UPDATE "receta-auditado" AS r
-        SET ref_id_global = v.ref_id_global::int
+        SET ref_id_global = v.ref_id_global::bigint
         FROM (VALUES ${tuples}) AS v(id_receta, ref_id_global)
         WHERE r.id_receta = v.id_receta::int
           AND r.ref_id_global IS NULL

@@ -44,17 +44,17 @@ export class RecetaAuditado {
     @Column({ name: 'numero_receta', type: 'varchar', nullable: true })
     numeroReceta: string | null;
 
-    @Column({ name: 'id_global', type: 'int', nullable: true })
+    @Column({ name: 'id_global', type: 'bigint', nullable: true })
     idGlobal: number | null;
 
-    @Column({ name: 'ref_id_global', type: 'int', nullable: true })
+    @Column({ name: 'ref_id_global', type: 'bigint', nullable: true })
     refIdGlobal: number | null;
 
     /**
      * ID de la caja asociada a la receta.
      * Nota: Futura Foreign Key a Caja. Actualmente se guarda con IDGLOBAL.
      */
-    @Column({ name: 'id_caja', type: 'int', nullable: true })
+    @Column({ name: 'id_caja', type: 'bigint', nullable: true })
     idCaja: number | null;
 
     @Column({ name: 'fecha_apertura_caja', type: 'timestamp', nullable: true })

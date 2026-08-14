@@ -73,7 +73,7 @@ export class AppService implements OnModuleInit {
             const filasPlex = await this.plexService.getIdGlobalByIds(idRecetas);
             const valores = filasPlex.map((f) => ({
                 idReceta: f.IDReceta,
-                idGlobal: f.idGlobal ?? null,
+                idGlobal: f.IDGlobal ?? null,
             }));
 
             const sinMatch = idRecetas.length - valores.length;
@@ -199,9 +199,9 @@ export class AppService implements OnModuleInit {
             idReceta: recetaPlex.IDReceta,
             idRecetaGlobal: recetaPlex.IdRecetaGlobal ?? null,
             numeroReceta: recetaPlex.NumReceta ?? null,
-            idGlobal: recetaPlex.idGlobal ?? null,
+            idGlobal: recetaPlex.IDGlobal ?? null,
             refIdGlobal: recetaPlex.RefIDGlobal ?? null,
-            idCaja: recetaPlex.idGlobal, // await this.auditoriaService.getCajaSegunGlobal(recetaPlex.idGlobal),
+            idCaja: recetaPlex.IDGlobal ?? null, // await this.auditoriaService.getCajaSegunGlobal(recetaPlex.IDGlobal),
             fechaAperturaCaja: recetaPlex.FechaApertura,
             fechaCierreCaja: recetaPlex.FechaCierre,
             sucursal: recetaPlex.Sucursal,
