@@ -4,6 +4,7 @@ import { RecetaAuditado } from './entities/recetas.entity';
 import { In, IsNull, Repository } from 'typeorm';
 import { IRecetaAuditado } from './interface/receta-auditada.interface';
 import { CajaAuditada } from './entities/caja-auditada.entity';
+import { COLUMNAS_SINCRONIZADAS_DESDE_PLEX, CONFLICTO_UPSERT } from './columnas-sincronizadas';
 
 @Injectable()
 export class AuditoriaService {
@@ -43,7 +44,23 @@ export class AuditoriaService {
                     where: { idReceta: In(ids) },
                 });
 
-                await this.recetaAuditaRepository.upsert(chunk, ['idReceta']);
+                // NO usar `repository.upsert()`: genera un DO UPDATE SET sobre
+                // TODAS las columnas, incluidas `estado` y `auditado`, que este
+                // cron no calcula y no le pertenecen. Ver
+                // `columnas-sincronizadas.ts` para el detalle del dano que eso
+                // provoco en produccion.
+                //
+                // `orUpdate(overwrite, conflictTarget)` produce:
+                //   ON CONFLICT (id_receta) DO UPDATE SET <solo la whitelist>
+                // El INSERT sigue escribiendo la fila completa, que es lo
+                // correcto para una receta que aparece por primera vez.
+                await this.recetaAuditaRepository
+                    .createQueryBuilder()
+                    .insert()
+                    .into(RecetaAuditado)
+                    .values(chunk)
+                    .orUpdate([...COLUMNAS_SINCRONIZADAS_DESDE_PLEX], [...CONFLICTO_UPSERT])
+                    .execute();
 
                 actualizadas += existentes.length;
                 insertadas += chunk.length - existentes.length;
