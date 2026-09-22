@@ -53,7 +53,7 @@ export class AuditoriaService {
                 // `orUpdate(overwrite, conflictTarget)` produce:
                 //   ON CONFLICT (id_receta) DO UPDATE SET <solo la whitelist>
                 // El INSERT sigue escribiendo la fila completa, que es lo
-                // correcto para una receta que aparece por primera vez.
+                // correcto para una receta que aparece por primera vez..
                 await this.recetaAuditaRepository
                     .createQueryBuilder()
                     .insert()
